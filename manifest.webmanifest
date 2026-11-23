@@ -1,0 +1,15 @@
+{
+  "name": "Seven Scop",
+  "short_name": "Seven Scop",
+  "description": "Game kartu Seven bergaya toon",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#2e2048",
+  "theme_color": "#2e2048",
+  "icons": [
+    { "src": "assets/img/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

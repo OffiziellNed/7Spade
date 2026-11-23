@@ -8,7 +8,8 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bar);font-family:var(--font);
-  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
+  overscroll-behavior:none;-webkit-touch-callout:none;-webkit-text-size-adjust:100%;touch-action:none}
 #stage{position:fixed;inset:0;width:100vw;height:100vh;display:block;touch-action:manipulation}
 .hidden{display:none!important}
 
@@ -53,3 +54,33 @@ html,body{margin:0;height:100%;overflow:hidden;background:var(--bar);font-family
   #barlogo{height:38px}
   .tb,.score{font-size:12px;padding:4px 8px;border-width:2px;box-shadow:2px 3px 0 var(--ink)}
 }
+
+/* ---------- area aman (poni/notch) ---------- */
+#safe{position:fixed;visibility:hidden;pointer-events:none;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+
+/* ---------- HP posisi miring: bar pindah ke samping kiri, tombol jadi ikon ---------- */
+body.compact #topbar{top:0;bottom:0;left:0;right:auto;height:auto;width:calc(66px + env(safe-area-inset-left));
+  flex-direction:column;align-items:stretch;gap:6px;overflow-y:auto;scrollbar-width:none;
+  padding:8px 7px 8px calc(7px + env(safe-area-inset-left))}
+body.compact #topbar::-webkit-scrollbar{display:none}
+body.compact #barlogo{height:36px;align-self:center;margin:0 0 2px}
+body.compact #btns{flex-direction:column;gap:7px;overflow:visible}
+body.compact .tb{font-size:19px;line-height:1;padding:7px 0;text-align:center;border-width:2px;box-shadow:2px 3px 0 var(--ink)}
+body.compact #scores{margin:6px 0 0;flex-direction:column;gap:5px}
+body.compact .score{font-size:10px;padding:4px 1px;text-align:center;border-width:2px;box-shadow:2px 3px 0 var(--ink)}
+body.compact #log{display:none}
+body.compact .modal .box{min-width:0;width:min(92vw,420px);max-height:92vh;overflow-y:auto;padding:12px 18px 16px}
+body.compact .modal label{font-size:15px;margin:4px 0}
+
+/* ---------- HP posisi tegak: minta diputar ---------- */
+#rotate{display:none;position:fixed;inset:0;z-index:50;flex-direction:column;align-items:center;justify-content:center;
+  gap:22px;background:radial-gradient(circle at 50% 35%,#4b3a70 0,var(--bar) 70%);color:#fff;text-align:center;padding:24px}
+body.portrait #rotate{display:flex}
+#rotate img{height:110px}
+#rotate p{margin:0;font-size:24px;color:var(--yel);text-shadow:0 0 0 var(--ink),
+  2px 2px 0 var(--ink),-2px 2px 0 var(--ink),2px -2px 0 var(--ink),-2px -2px 0 var(--ink),0 3px 0 var(--ink)}
+#rotate .phone{width:62px;height:104px;border:5px solid var(--ink);border-radius:14px;background:#fffaf0;
+  box-shadow:5px 6px 0 var(--ink);display:flex;align-items:center;justify-content:center;font-size:34px;color:var(--ink);
+  animation:putar 2.2s ease-in-out infinite}
+@keyframes putar{0%,15%{transform:rotate(0)}45%,75%{transform:rotate(-90deg)}100%{transform:rotate(0)}}

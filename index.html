@@ -2,11 +2,18 @@
 <html lang="id">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Seven Scop</title>
   <meta name="description" content="Seven Scop — game kartu Seven (Sevens) bergaya toon. Main lawan PC, 2 sampai 4 pemain.">
   <meta name="theme-color" content="#2e2048">
   <link rel="icon" type="image/png" href="assets/img/favicon.png">
+  <!-- bisa dipasang ke layar utama HP seperti aplikasi -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Seven Scop">
   <link rel="preload" href="assets/fonts/HeyComic.woff" as="font" type="font/woff" crossorigin>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -46,6 +53,15 @@
       <button id="setOk" class="tb yel"></button>
     </div>
   </div>
+
+  <!-- HP dipegang tegak -->
+  <div id="rotate">
+    <img src="assets/img/logo.png" alt="">
+    <div class="phone"><span>♠</span></div>
+    <p id="rotateText">Putar HP kamu ke posisi miring</p>
+  </div>
+  <!-- pengukur area aman (poni/notch) -->
+  <div id="safe"></div>
 
   <noscript>Seven Scop butuh JavaScript untuk berjalan.</noscript>
   <script src="game.js"></script>

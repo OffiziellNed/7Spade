@@ -42,6 +42,7 @@ const TXT = {
     set_bob: 'Wobble green/orange cards', set_sound: 'Sound on', set_speed: 'Animation speed:', ok: 'OK!',
     speed_names: { Lambat: 'Slow', Normal: 'Normal', Cepat: 'Fast' },
     bye: 'THANKS FOR PLAYING!\nClose this tab to exit.',
+    rotate: 'Rotate your phone to landscape',
   },
   id: {
     suits: ['Sekop', 'Hati', 'Wajik', 'Keriting'],
@@ -67,6 +68,7 @@ const TXT = {
     set_bob: 'Kartu hijau/orange goyang', set_sound: 'Suara aktif', set_speed: 'Kecepatan animasi:', ok: 'OKE!',
     speed_names: { Lambat: 'Lambat', Normal: 'Normal', Cepat: 'Cepat' },
     bye: 'TERIMA KASIH SUDAH MAIN!\nTutup tab ini untuk keluar.',
+    rotate: 'Putar HP kamu ke posisi miring',
   },
 };
 const LANG_NAMES = { en: 'English', id: 'Bahasa Indonesia' };
@@ -130,9 +132,22 @@ for (const k of ['deal', 'pow', 'perfect', 'yes', 'boom', 'win', 'lose']) {
 }
 const CHEER_SND = ['pow', 'perfect', 'yes', 'boom'];
 function stopSound() { for (const a of Object.values(SND)) { try { a.pause(); a.currentTime = 0; } catch (e) { } } }
+let audioUnlocked = false;
+function unlockAudio() {
+  if (audioUnlocked) return; audioUnlocked = true;
+  for (const a of Object.values(SND)) {
+    try {
+      a._unlocking = true; a.muted = true;
+      const p = a.play();
+      const fin = () => { if (a._unlocking) { a.pause(); a.currentTime = 0; } a._unlocking = false; a.muted = false; };
+      if (p && p.then) p.then(fin).catch(fin); else fin();
+    } catch (e) { }
+  }
+}
 function playSound(k) {
   if (!S.sound || !SND[k]) return;
   stopSound();
+  SND[k]._unlocking = false; SND[k].muted = false;
   try { SND[k].currentTime = 0; const p = SND[k].play(); if (p && p.catch) p.catch(() => { }); } catch (e) { }
 }
 const imgReady = im => im && im.complete && im.naturalWidth > 0;
@@ -146,17 +161,32 @@ let DPR = 1, VW = 0, VH = 0;
 // transform aktif: koordinat dasar -> layar
 const view = { s: 1, ox: 0, oy: 0 };
 
+// mode HP: COMPACT = HP posisi miring (bar di samping), PORTRAIT = HP posisi tegak (minta diputar)
+let COMPACT = false, PORTRAIT = false;
+const SAFE = { t: 0, r: 0, b: 0, l: 0 };
+function readSafe() {
+  const cs = getComputedStyle(document.getElementById('safe'));
+  SAFE.t = parseFloat(cs.paddingTop) || 0; SAFE.r = parseFloat(cs.paddingRight) || 0;
+  SAFE.b = parseFloat(cs.paddingBottom) || 0; SAFE.l = parseFloat(cs.paddingLeft) || 0;
+}
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 2);
   VW = window.innerWidth; VH = window.innerHeight;
   cv.width = Math.round(VW * DPR); cv.height = Math.round(VH * DPR);
+  const small = Math.min(VW, VH) <= 560;
+  const wasC = COMPACT;
+  COMPACT = small && VW > VH; PORTRAIT = small && VH >= VW;
+  document.body.classList.toggle('compact', COMPACT);
+  document.body.classList.toggle('portrait', PORTRAIT);
+  readSafe();
+  if (wasC !== COMPACT && typeof applyLang === 'function') { applyLang(); if (ST.players.length) layoutHand(); }
 }
 window.addEventListener('resize', resize);
-resize();
+window.addEventListener('orientationchange', () => setTimeout(resize, 200));
 
-function fitView(bw, bh, area, alignX = 0.5) {
+function fitView(bw, bh, area, alignX = 0.5, bx0 = 0, by0 = 0) {
   const s = Math.max(0.2, Math.min(area.w / bw, area.h / bh));
-  view.s = s; view.ox = area.x + (area.w - bw * s) * alignX; view.oy = area.y + (area.h - bh * s) / 2;
+  view.s = s; view.ox = area.x + (area.w - bw * s) * alignX - bx0 * s; view.oy = area.y + (area.h - bh * s) / 2 - by0 * s;
   ctx.setTransform(DPR * s, 0, 0, DPR * s, DPR * view.ox, DPR * view.oy);
 }
 function screenTransform() { ctx.setTransform(DPR, 0, 0, DPR, 0, 0); }
@@ -319,7 +349,7 @@ function scheduleBot() { later(S.anim ? 650 / mult() : 300, botTurn); }
 function refresh() { layoutHand(); updateScores(); }
 
 function cardOrigin(pi, card) {
-  if (pi === 0) { const h = ST.hand.find(h => cardKey(h.c) === cardKey(card)); if (h) return [h.x, h.y + h.off, HAND_W, HAND_H]; }
+  if (pi === 0) { const h = ST.hand.find(h => cardKey(h.c) === cardKey(card)); if (h) return [h.x, h.y + h.off, h.w, h.h]; }
   return [180 + pi * 230, -60, HAND_W, HAND_H];
 }
 
@@ -454,9 +484,11 @@ function layoutHand() {
   const discSet = myTurn && !pl.length ? new Set(getDiscardable(human.hand).map(cardKey)) : new Set();
   const rows = []; for (let i = 0; i < sorted.length; i += 13) rows.push(sorted.slice(i, i + 13));
   const rowY = rows.length <= 1 ? [650] : [600, 700];
+  // HP: kalau cuma satu baris, kartu diperbesar supaya gampang disentuh
+  const hs = COMPACT && rows.length <= 1 ? 1.22 : 1, CWd = HAND_W * hs, CHt = HAND_H * hs;
   const layout = rows.map(row => {
     const xs = []; let x = 0, prev = null;
-    for (const c of row) { if (ST.sort === 'warna' && prev && prev !== c.s) x += SUIT_GAP; xs.push(x); x += HAND_STEP; prev = c.s; }
+    for (const c of row) { if (ST.sort === 'warna' && prev && prev !== c.s) x += SUIT_GAP * hs; xs.push(x); x += HAND_STEP * hs; prev = c.s; }
     return { row, xs };
   });
   // kotak info di kanan bawah: kalau baris bawah nabrak, geser & rapatkan
@@ -464,21 +496,21 @@ function layoutHand() {
   let shift = 0;
   layout.forEach((L, ri) => {
     if (!L.xs.length) return;
-    const y = rowY[Math.min(ri, rowY.length - 1)], right = HAND_CX + (L.xs[L.xs.length - 1] + HAND_W) / 2;
-    if (y + HAND_H / 2 > HAND_BOX[3] - 50 && right > statsLeft) shift = Math.max(shift, right - statsLeft);
+    const y = rowY[Math.min(ri, rowY.length - 1)], right = HAND_CX + (L.xs[L.xs.length - 1] + CWd) / 2;
+    if (y + CHt / 2 > HAND_BOX[3] - 50 && right > statsLeft) shift = Math.max(shift, right - statsLeft);
   });
   let cx = HAND_CX;
   if (shift > 0) {
     const Lx = HAND_BOX[0] + 165, Rx = statsLeft - 6; cx = (Lx + Rx) / 2;
-    for (const L of layout) if (L.xs.length && L.xs[L.xs.length - 1] + HAND_W > Rx - Lx) {
-      const f = (Rx - Lx - HAND_W) / L.xs[L.xs.length - 1]; L.xs = L.xs.map(x => x * f);
+    for (const L of layout) if (L.xs.length && L.xs[L.xs.length - 1] + CWd > Rx - Lx) {
+      const f = (Rx - Lx - CWd) / L.xs[L.xs.length - 1]; L.xs = L.xs.map(x => x * f);
     }
   }
   layout.forEach((L, ri) => {
-    const total = L.xs.length ? L.xs[L.xs.length - 1] + HAND_W : 0, off = cx - total / 2 + HAND_W / 2;
+    const total = L.xs.length ? L.xs[L.xs.length - 1] + CWd : 0, off = cx - total / 2 + CWd / 2;
     L.row.forEach((c, i) => {
       const k = cardKey(c), play = playSet.has(k), disc = discSet.has(k);
-      ST.hand.push({ c, x: off + L.xs[i], y: rowY[Math.min(ri, rowY.length - 1)], play, disc, dim: !myTurn, off: old[k] || 0 });
+      ST.hand.push({ c, x: off + L.xs[i], y: rowY[Math.min(ri, rowY.length - 1)], w: CWd, h: CHt, play, disc, dim: !myTurn, off: old[k] || 0 });
     });
   });
 }
@@ -641,6 +673,10 @@ function drawOverlay(dtf) {
 
 // ======================= GAMBAR LAYAR GAME =======================
 function gameArea() {
+  if (COMPACT) {          // HP miring: bar di kiri, papan memakai seluruh tinggi layar
+    const side = topbar.offsetWidth || 66;
+    return { x: side + 4, y: 4 + SAFE.t, w: VW - side - 8 - SAFE.r, h: VH - 8 - SAFE.t - SAFE.b };
+  }
   const top = topbar.offsetHeight || 60, bottom = (logEl.offsetHeight || 40) + 10;
   return { x: 10, y: top + 4, w: VW - 20, h: VH - top - bottom - 8 };
 }
@@ -696,7 +732,7 @@ function drawGame(dtf) {
     const [px, py] = ST.pointer;
     for (let i = ST.hand.length - 1; i >= 0; i--) {
       const h = ST.hand[i];
-      if ((h.play || h.disc) && Math.abs(px - h.x) <= HAND_W / 2 && Math.abs(py - (h.y + h.off)) <= HAND_H / 2) { hoverIdx = i; break; }
+      if ((h.play || h.disc) && Math.abs(px - h.x) <= h.w / 2 && Math.abs(py - (h.y + h.off)) <= h.h / 2) { hoverIdx = i; break; }
     }
   }
   ST.hover = hoverIdx;
@@ -713,7 +749,7 @@ function drawGame(dtf) {
     const h = ST.hand[i], w0 = ST.wiggle[cardKey(h.c)];
     let wx = 0;
     if (w0) { const k = (now() - w0) / Math.max(1, dur(360)); if (k >= 1) delete ST.wiggle[cardKey(h.c)]; else wx = Math.sin(k * Math.PI * 6) * 7 * (1 - k); }
-    drawCard(h.x + wx, h.y + h.off, HAND_W, HAND_H, h.c, { face: h.play ? PLAY_C : h.disc ? DISC_C : FACE, dim: h.dim });
+    drawCard(h.x + wx, h.y + h.off, h.w, h.h, h.c, { face: h.play ? PLAY_C : h.disc ? DISC_C : FACE, dim: h.dim });
   }
   cv.style.cursor = (hoverIdx >= 0 || (ST.dialog && dialogHit(...ST.pointer) >= 0)) ? 'pointer' : '';
 
@@ -843,7 +879,8 @@ function drawCoverImage(im, anchorY = 0) {
 }
 function drawMenu(dtf) {
   drawCoverImage(IMG.menu, 0);
-  fitView(MW, MH, { x: 0, y: 0, w: VW, h: VH }, 0.15);
+  if (COMPACT) fitView(MW, 700, { x: SAFE.l, y: 0, w: VW - SAFE.l, h: VH }, 0.06, 0, 28);   // HP: perbesar logo & tombol
+  else fitView(MW, MH, { x: 0, y: 0, w: VW, h: VH }, 0.15);
   const tn = now() / 1000, anim = S.anim, ph = tn * 2;
   // simbol kartu melayang
   if (!ST.floaters.length) ST.floaters = Array.from({ length: 10 }, () => ({ x: rnd(20, 620), y: rnd(0, MH), v: rnd(0.3, 0.9), ch: pick(SUITS), sz: rnd(18, 34), p: rnd(0, 6.28) }));
@@ -877,14 +914,14 @@ function drawMenu(dtf) {
     text(it.lab(), x, y, 26 * sc, tcol);
     if (h > 0.5) text('▶', x - w / 2 - 30 + (anim ? Math.sin(ph * 4) * 4 : 0), y, 26, YEL, { stroke: 2 });
   });
-  text(t('menu_hint'), 40, MH - 26, 14, '#e0d8ff', { align: 'left' });
+  if (!COMPACT) text(t('menu_hint'), 40, MH - 26, 14, '#e0d8ff', { align: 'left' });
   // pesan keluar
   if (ST.bye) {
     const k = (now() - ST.bye) / 3200;
     if (k >= 1) ST.bye = null;
     else {
       const sc = Math.max(0.05, easeOutBack(Math.min(1, k * 4), 1.7)) * (k > 0.85 ? Math.max(0.05, (1 - k) / 0.15) : 1);
-      drawRibbon(MENU_X + 260, MH - 120, sc, 3, { text: t('bye'), px: 20, fill: YEL, tail: RED, tcol: INK, stroke: 0 });
+      drawRibbon(MENU_X + 260, COMPACT ? MENU_Y0 + 270 : MH - 120, sc, 3, { text: t('bye'), px: 20, fill: YEL, tail: RED, tcol: INK, stroke: 0 });
     }
   }
   cv.style.cursor = menuHit(...ST.pointer) >= 0 ? 'pointer' : '';
@@ -937,7 +974,12 @@ function showMenu() {
 function applyLang() {
   document.documentElement.lang = S.lang;
   const B = { back: 'btn_menu', restart: 'btn_restart', sortSuit: 'sort_suit', sortRank: 'sort_rank', settings: 'settings' };
-  document.querySelectorAll('#btns .tb').forEach(b => b.textContent = t(B[b.dataset.act]));
+  const ICON = { back: '◄', restart: '↻', sortSuit: '♠♥', sortRank: '1-9', settings: '⚙' };
+  document.querySelectorAll('#btns .tb').forEach(b => {
+    b.textContent = COMPACT ? ICON[b.dataset.act] : t(B[b.dataset.act]);
+    b.title = t(B[b.dataset.act]); b.setAttribute('aria-label', t(B[b.dataset.act]));
+  });
+  const rt = document.getElementById('rotateText'); if (rt) rt.textContent = t('rotate');
 }
 
 // ======================= SETELAN =======================
@@ -978,7 +1020,20 @@ document.getElementById('btns').addEventListener('click', e => {
 });
 
 cv.addEventListener('pointermove', e => { ST.pointer = toBase(e.clientX, e.clientY); if (ST.scene === 'menu') { const i = menuHit(...ST.pointer); if (i >= 0) ST.menuSel = i; } if (ST.dialog) { const i = dialogHit(...ST.pointer); if (i >= 0) ST.dialog.sel = i; } });
+let fsTried = false;
+function tryFullscreen() {
+  // Android: layar penuh + kunci posisi miring saat pertama disentuh (iPhone tidak mendukung, diabaikan)
+  if (fsTried || !window.matchMedia('(pointer: coarse)').matches) return;
+  fsTried = true;
+  const el = document.documentElement;
+  try {
+    const p = el.requestFullscreen ? el.requestFullscreen({ navigationUI: 'hide' }) : null;
+    const lock = () => { try { const q = screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape'); if (q && q.catch) q.catch(() => { }); } catch (e) { } };
+    if (p && p.then) p.then(lock).catch(() => { }); else lock();
+  } catch (e) { }
+}
 cv.addEventListener('pointerdown', e => {
+  unlockAudio(); tryFullscreen();
   ST.pointer = toBase(e.clientX, e.clientY);
   const [x, y] = ST.pointer;
   if (ST.scene === 'menu') { const i = menuHit(x, y); if (i >= 0) { ST.menuSel = i; menuActivate(); } return; }
@@ -992,11 +1047,22 @@ cv.addEventListener('pointerdown', e => {
   }
   for (let i = ST.hand.length - 1; i >= 0; i--) {
     const h = ST.hand[i];
-    if (Math.abs(x - h.x) <= HAND_W / 2 && Math.abs(y - (h.y + h.off)) <= HAND_H / 2) { humanClick(h.c); return; }
+    if (Math.abs(x - h.x) <= h.w / 2 && Math.abs(y - (h.y + h.off)) <= h.h / 2) { humanClick(h.c); return; }
+  }
+  // jari: pilih kartu terdekat kalau sentuhannya sedikit meleset
+  if (e.pointerType === 'touch') {
+    let best = null, bd = 1e9;
+    for (const h of ST.hand) {
+      const dx = Math.max(0, Math.abs(x - h.x) - h.w / 2), dy = Math.max(0, Math.abs(y - (h.y + h.off)) - h.h / 2), d = Math.hypot(dx, dy);
+      if (d < bd) { bd = d; best = h; }
+    }
+    if (best && bd <= 14) humanClick(best.c);
   }
 });
 
+document.getElementById('btns').addEventListener('pointerdown', () => unlockAudio());
 window.addEventListener('keydown', e => {
+  unlockAudio();
   if (!setEl.classList.contains('hidden')) { if (e.key === 'Escape' || e.key === 'Enter') closeSettings(); return; }
   if (ST.scene === 'deal') { if (['Enter', ' ', 'Escape'].includes(e.key)) dealFinish(); return; }
   if (ST.scene === 'menu') {
@@ -1030,6 +1096,7 @@ function frame() {
 }
 
 // mulai
+resize();
 applyLang();
 logLine(t('log_ready'));
 menuMain();
@@ -1038,4 +1105,5 @@ const fontReady = document.fonts && document.fonts.load ? document.fonts.load('4
 Promise.race([fontReady, new Promise(r => setTimeout(r, 2500))]).then(() => requestAnimationFrame(frame));
 
 // untuk pengujian otomatis
-window.__SS = { ST, S, startGame, showDeal, showMenu, endGame, humanClick, getPlayable, getDiscardable, points };
+window.__SS = { ST, S, startGame, showDeal, showMenu, endGame, humanClick, getPlayable, getDiscardable, points, askMenu, closeDialog,
+  baseToScreen: (x, y) => [view.ox + x * view.s, view.oy + y * view.s] };

@@ -11,6 +11,13 @@ Game kartu **Seven** (Sevens) bergaya toon: kamu lawan PC, 2 sampai 4 pemain, bi
 
 Kontrol: mouse/sentuh, atau keyboard (↑ ↓ Enter Esc di menu; Esc saat main = kembali ke menu).
 
+## Main di HP
+
+- Pegang HP **miring (landscape)**. Kalau dipegang tegak, game minta HP diputar.
+- Di HP, tombol pindah ke **sisi kiri** dan jadi ikon: ◄ kembali, ↻ main lagi, ♠♥ urut warna, 1-9 urut angka, ⚙ setelan.
+- Di Android, game otomatis **layar penuh** saat pertama disentuh.
+- Supaya terasa seperti aplikasi: buka di browser → menu **Tambahkan ke Layar Utama** (Android: ⋮ di Chrome; iPhone: tombol Bagikan di Safari).
+
 ## Isi repo
 
 | Folder / file | Isi |
