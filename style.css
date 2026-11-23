@@ -1,0 +1,55 @@
+/* Hey Comic (khurasan) — gratis untuk pemakaian pribadi. Ditambah angka 0 dan tanda : ; */
+@font-face{font-family:"Hey Comic";src:url("assets/fonts/HeyComic.woff") format("woff"),url("assets/fonts/HeyComic.ttf") format("truetype");
+  font-weight:100 900;font-style:normal;font-display:block}
+:root{
+  --ink:#1d1d2c; --bar:#2e2048; --bar2:#3e2d5c; --yel:#ffd93d; --pink:#ff5d8f;
+  --green:#7bed6a; --sky:#4cc9f0; --lilac:#c8b6ff; --lamp:#ffb98a; --panel:#23935a;
+  --font:"Hey Comic","Comic Sans MS","Chalkboard SE",cursive;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bar);font-family:var(--font);
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#stage{position:fixed;inset:0;width:100vw;height:100vh;display:block;touch-action:manipulation}
+.hidden{display:none!important}
+
+/* ---------- bar atas ---------- */
+#topbar{position:fixed;top:0;left:0;right:0;height:60px;display:flex;align-items:center;gap:10px;
+  padding:0 12px;background:var(--bar);z-index:5}
+#barlogo{height:46px;width:auto;margin-right:6px;flex:none}
+#btns{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+#btns::-webkit-scrollbar{display:none}
+.tb{font-family:var(--font);font-weight:700;font-size:15px;color:var(--ink);padding:6px 12px;
+  border:3px solid var(--ink);border-radius:10px;box-shadow:3px 4px 0 var(--ink);cursor:pointer;
+  white-space:nowrap;transition:transform .08s,box-shadow .08s}
+.tb:hover{transform:translateY(-2px)}
+.tb:active{transform:translate(3px,4px);box-shadow:0 0 0 var(--ink)}
+.tb.pink{background:var(--pink)} .tb.yel{background:var(--yel)} .tb.green{background:var(--green)}
+.tb.sky{background:var(--sky)} .tb.lilac{background:var(--lilac)}
+#scores{margin-left:auto;display:flex;gap:6px;flex:none}
+.score{font-weight:700;font-size:15px;color:#fff;background:var(--bar2);border:3px solid var(--ink);
+  border-radius:10px;padding:6px 12px;box-shadow:3px 4px 0 var(--ink);white-space:nowrap}
+.score.turn{background:var(--yel);color:var(--ink)}
+
+/* ---------- log ---------- */
+#log{position:fixed;left:10px;right:10px;bottom:6px;height:40px;overflow-y:auto;z-index:5;
+  background:var(--bar);color:var(--lamp);font:12px/1.6 Consolas,"Courier New",monospace;padding:2px 8px;
+  border-radius:6px}
+
+/* ---------- setelan ---------- */
+.modal{position:fixed;inset:0;background:rgba(29,29,44,.55);display:flex;align-items:center;
+  justify-content:center;z-index:20}
+.modal .box{background:var(--bar);color:#fff;border:4px solid var(--ink);border-radius:18px;
+  box-shadow:8px 9px 0 var(--ink);padding:18px 26px 22px;min-width:320px;font-weight:700}
+.modal h2{margin:0 0 12px;color:var(--yel);text-align:center;font-size:22px}
+.modal label{display:block;margin:6px 0;cursor:pointer;font-size:16px}
+.modal p{color:var(--sky);margin:14px 0 4px}
+.modal .speeds{display:flex;gap:14px}
+.modal .speeds label{display:inline-block}
+.modal input{accent-color:var(--yel);transform:scale(1.2);margin-right:6px}
+#setOk{display:block;margin:18px auto 0}
+
+@media (max-width:820px){
+  #topbar{height:52px;gap:6px;padding:0 6px}
+  #barlogo{height:38px}
+  .tb,.score{font-size:12px;padding:4px 8px;border-width:2px;box-shadow:2px 3px 0 var(--ink)}
+}

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Seven Scop</title>
+  <meta name="description" content="Seven Scop — game kartu Seven (Sevens) bergaya toon. Main lawan PC, 2 sampai 4 pemain.">
+  <meta name="theme-color" content="#2e2048">
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+  <link rel="preload" href="assets/fonts/HeyComic.woff" as="font" type="font/woff" crossorigin>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="stage"></canvas>
+
+  <!-- bar atas saat main -->
+  <header id="topbar" class="hidden">
+    <img id="barlogo" src="assets/img/logo.png" alt="Seven Scop">
+    <nav id="btns">
+      <button class="tb pink"   data-act="back"></button>
+      <button class="tb yel"    data-act="restart"></button>
+      <button class="tb green"  data-act="sortSuit"></button>
+      <button class="tb sky"    data-act="sortRank"></button>
+      <button class="tb lilac"  data-act="settings"></button>
+    </nav>
+    <div id="scores"></div>
+  </header>
+
+  <!-- log permainan -->
+  <footer id="log" class="hidden"></footer>
+
+  <!-- jendela setelan -->
+  <div id="settings" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="box">
+      <h2 id="setTitle"></h2>
+      <label><input type="checkbox" id="optAnim"> <span id="lblAnim"></span></label>
+      <label><input type="checkbox" id="optFx"> <span id="lblFx"></span></label>
+      <label><input type="checkbox" id="optBob"> <span id="lblBob"></span></label>
+      <label><input type="checkbox" id="optSound"> <span id="lblSound"></span></label>
+      <p id="lblSpeed"></p>
+      <div class="speeds">
+        <label><input type="radio" name="speed" value="Lambat"> <span data-speed="Lambat"></span></label>
+        <label><input type="radio" name="speed" value="Normal"> <span data-speed="Normal"></span></label>
+        <label><input type="radio" name="speed" value="Cepat"> <span data-speed="Cepat"></span></label>
+      </div>
+      <button id="setOk" class="tb yel"></button>
+    </div>
+  </div>
+
+  <noscript>Seven Scop butuh JavaScript untuk berjalan.</noscript>
+  <script src="game.js"></script>
+</body>
+</html>
