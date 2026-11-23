@@ -1,0 +1,1 @@
+python seven_scop.py
