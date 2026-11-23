@@ -171,8 +171,12 @@ function readSafe() {
 }
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 2);
-  VW = window.innerWidth; VH = window.innerHeight;
+  // ukuran layar yang BENAR-BENAR kelihatan (di HP, bar alamat browser tidak ikut dihitung)
+  const vv = window.visualViewport;
+  VW = Math.round(vv ? vv.width : window.innerWidth); VH = Math.round(vv ? vv.height : window.innerHeight);
   cv.width = Math.round(VW * DPR); cv.height = Math.round(VH * DPR);
+  // ukuran tampil kanvas dikunci sama persis -> gambar tidak melar/terpotong
+  cv.style.width = VW + 'px'; cv.style.height = VH + 'px';
   const small = Math.min(VW, VH) <= 560;
   const wasC = COMPACT;
   COMPACT = small && VW > VH; PORTRAIT = small && VH >= VW;
@@ -182,6 +186,7 @@ function resize() {
   if (wasC !== COMPACT && typeof applyLang === 'function') { applyLang(); if (ST.players.length) layoutHand(); }
 }
 window.addEventListener('resize', resize);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
 window.addEventListener('orientationchange', () => setTimeout(resize, 200));
 
 function fitView(bw, bh, area, alignX = 0.5, bx0 = 0, by0 = 0) {
